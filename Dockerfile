@@ -12,17 +12,11 @@ SHELL ["/bin/bash", "-c"]
 # Run as root
 USER root
 
-# Environment Variables
-  # This fixes a silly error in Ubuntu during docker builds related to debconf/dialog, etc.
-    ENV DEBIAN_FRONTEND noninteractive
-  # ML Server paths for python, R, pip and conda to work
-    ENV LD_LIBRARY_PATH /opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH
-    ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/python/bin/
-    ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/
-
 ####################################################################################
 # UBUNTU INSTALLS + CONFIGS
 ####################################################################################
+#
+ENV DEBIAN_FRONTEND noninteractive
 #
 RUN \
   # Create User account
@@ -32,7 +26,7 @@ RUN \
     rm -rf /var/lib/apt/lists/* && \
     echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99fixbadproxy && \
     echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
-    echo "Acquire::BrokenProxy    true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
+    echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
     apt-get update -o Acquire::CompressionTypes::Order::=gz && \
   # Install common for Ubuntu
     apt-get clean -y && apt-get update -y && \
@@ -84,6 +78,11 @@ RUN \
 ####################################################################################
 # ML SERVER 9.3.0 Install
 ####################################################################################
+# ML Server paths for python, R, pip and conda to work
+ENV LD_LIBRARY_PATH /opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH
+ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/python/bin/
+ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/
+#
 RUN \
 #
   # Optionally, if your system does not have the https apt transport option
@@ -128,7 +127,6 @@ RUN \
 # Layer Cleanup
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
-
 
 USER ubuntu
 CMD /bin/bash
