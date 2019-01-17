@@ -128,3 +128,85 @@ RUN \
 # Layer Cleanup
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
+
+
+####################################################################################
+# DB DRIVERS
+####################################################################################
+RUN \
+#
+    apt-get clean -y && apt-get update -y && \
+#
+# MS SQL SERVER Drivers
+#######################
+#
+    cd /tmp && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+  # Get Ubuntu 16.04 version of repo
+    # Not necessary, because alread defined
+    # curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+    apt-get update -y && \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 && \
+  # optional: for bcp and sqlcmd
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends mssql-tools && \
+    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> /home/ubuntu/.bashrc && \
+    source /home/ubuntu/.bashrc && \
+  # optional: for unixODBC development headers
+    apt-get install -y --no-install-recommends unixodbc-dev && \
+  # Don't think we need these below
+  # Create links to the static library names the MSSQL driver depends on
+    # ln -s libcrypto.so.1.0.0 /lib/x86_64-linux-gnu/libcrypto.so.10 && \
+    # ln -s libssl.so.1.0.0 /lib/x86_64-linux-gnu/libssl.so.10 && \
+    # ln -s libodbcinst.so.2 /usr/lib/x86_64-linux-gnu/libodbcinst.so.1 && \
+#
+# Teradata ODBC Drivers
+#######################
+    mkdir /opt/terajdbc && cd /tmp && \
+    wget https://s3-us-west-2.amazonaws.com/cs-dell/teradata/terajdbc4.jar -O /opt/terajdbc/terajdbc4.jar && \
+    wget https://s3-us-west-2.amazonaws.com/cs-dell/teradata/tdgssconfig.jar -O /opt/terajdbc/tdgssconfig.jar && \
+    wget https://s3.amazonaws.com/domino-dell-packages/tdodbc1620__ubuntu_indep.16.20.00.18-1.tar.gz && \
+    tar -xf tdodbc1620__ubuntu_indep.16.20.00.18-1.tar.gz && \
+    # Install libstdc++6 package
+    apt-get -f install -y --no-install-recommends lib32stdc++6 lib32gcc1 libc6-i386 && \
+    # Install Terdata driver  
+    cd /tmp/tdodbc1620 && dpkg -i tdodbc1620-16.20.00.18-1.noarch.deb && \
+    # Since unixODBC was installed earlier and is being used to manage
+    # connections with SQL Server, the necessary ODBC entry for Teradata needs
+    # to be added to the file /etc/odbcinst.ini.
+    # Copy version of file from my S3 bucket that has necessary entry
+    wget https://s3.amazonaws.com/dominofiles/odbcinst.ini -O /etc/odbcinst.ini && \
+#
+# Oracle DB Drivers
+#######################
+  # Drivers for Linux
+    mkdir -p /opt/oracle && \
+    wget https://s3-us-west-2.amazonaws.com/domino-deployment/2016/02/22/instantclient-basic-linux.x64-12.1.0.2.0.zip -O /opt/oracle/instantclient-basic-linux.x64-12.1.0.2.0.zip && \
+    wget https://s3-us-west-2.amazonaws.com/domino-deployment/2016/02/22/instantclient-sdk-linux.x64-12.1.0.2.0.zip -O /opt/oracle/instantclient-sdk-linux.x64-12.1.0.2.0.zip && \
+    apt-get install -y --no-install-recommends libaio1 && \
+    mkdir -p /opt/oracle/instantclient_12_1 && \
+    cd /opt/oracle && \
+    unzip instantclient-basic-linux.x64-12.1.0.2.0.zip && \
+    unzip instantclient-sdk-linux.x64-12.1.0.2.0.zip && \
+    cd /opt/oracle/instantclient_12_1 && \
+    # ln -s libclntsh.so.12.1 libclntsh.so && \
+    ln -s libocci.so.12.1 libocci.so && \
+    echo 'export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_1:\${LD_LIBRARY_PATH:-}' >> /home/ubuntu/.domino-defaults && \
+    echo 'export PATH=/opt/oracle/instantclient_12_1:\${PATH:-}' >> /home/ubuntu/.domino-defaults && \   
+    echo 'export PATH=/opt/oracle/instantclient_12_1:${PATH:-}' >> /home/ubuntu/.bashrc && \
+    echo 'export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_1:${LD_LIBRARY_PATH:-}' >> /home/ubuntu/.bashrc && \
+  # PyOracle
+    pip install cx_Oracle && \
+  # Using conda for ROracle as it gives version trouble from CRAN and MRAN
+    conda install -c eumetsat roracle && \
+#
+# PostgreSQL client
+###################
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/postgres.list && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update && apt-get install -y postgresql-10 postgresql-client-10 postgresql-contrib-10 && \
+#
+# Layer Cleanup
+  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+  chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
+
+USER ubuntu
+CMD /bin/bash
