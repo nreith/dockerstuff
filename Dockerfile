@@ -17,6 +17,7 @@ USER root
 ####################################################################################
 #
 ENV DEBIAN_FRONTEND noninteractive
+ENV TZ=America/Chicago
 #
 RUN \
   # Create User account
@@ -53,14 +54,14 @@ RUN \
       wget && \
   # Some Config
     export TERM=xterm-256color && \
+    export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
     apt-get install -y --no-install-recommends tzdata && \
-    echo "Chicago/USA" > /etc/timezone && \
+    ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
-    dpkg-reconfigure --frontend noninteractive tzdata && \
-    export DEBIAN_FRONTEND=noninteractive && \
+  # Install Java 11 (8 is now deprecated as of Jan. 2019)
     add-apt-repository ppa:linuxuprising/java && \
     apt-get update -y && \
-    echo oracle-java11-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    echo oracle-java11-installer shared/accepted-oracle-license-v1-2 select true | /usr/bin/debconf-set-selections && \
     apt-get install -y --no-install-recommends oracle-java11-installer && \
     apt-get install -y --no-install-recommends oracle-java11-set-default && \
   # FIX some annoying Ubuntu 16.04 warnings and errors
@@ -74,59 +75,3 @@ RUN \
 # Layer Cleanup
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
-
-####################################################################################
-# ML SERVER 9.3.0 Install
-####################################################################################
-# ML Server paths for python, R, pip and conda to work
-ENV LD_LIBRARY_PATH /opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH
-ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/python/bin/
-ENV PATH $PATH:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/
-#
-RUN \
-#
-  # Optionally, if your system does not have the https apt transport option
-    apt-get clean && apt-get update && \
-    cd /tmp && apt-get install -y --no-install-recommends apt-transport-https && \
-  # Add the **azure-cli** repo to your apt sources list
-    AZ_REPO=$(lsb_release -cs) && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | tee /etc/apt/sources.list.d/azure-cli.list && \
-  # Set the location of the package repo the "prod" directory containing the distribution.
-  # This example specifies 16.04. Replace with 14.04 if you want that version
-    wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb && \
-  # Register the repo
-    dpkg -i packages-microsoft-prod.deb && \
-  # Verify whether the "microsoft-prod.list" configuration file exists
-    ls -la /etc/apt/sources.list.d/ && \
-  # Add the Microsoft public signing key for Secure APT
-  # NOTE: get MS key from Ubuntu keyserver, since ms is giving issues with network/proxy
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
-  # Update packages on your system
-    apt-get update -y && \
-  # Install the server
-    apt-get install -y  --no-install-recommends -f microsoft-mlserver-all-9.3.0 && \
-  # Activate the server
-    /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
-  # List installed packages as a verification step
-    apt list --installed | grep microsoft && \
-  # Choose a package name and obtain verbose version information
-    dpkg --status microsoft-mlserver-packages-r-9.3.0 && \
-    dpkg --status microsoft-mlserver-packages-py-9.3.0 && \
-  # PATHS
-    echo 'export LD_LIBRARY_PATH=/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH' >> /home/ubuntu/.bashrc \ 
-	  R CMD javareconf && \
-    echo 'export PATH="$PATH:/opt/microsoft/mlserver/9.3.0/runtime/python/bin/"' >> /home/ubuntu/.bashrc && \
-    echo 'export PATH="$PATH:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/"' >> /home/ubuntu/.bashrc && \
-  # Make ML Server Python the Default Python
-    echo 'alias python=mlserver-python' >> /home/ubuntu/.bashrc && \
-    echo 'alias python3=mlserver-python' >> /home/ubuntu/.bashrc && \
-    echo 'alias R=Revo64' >> /home/ubuntu/.bashrc && \
-    source /home/ubuntu/.bashrc && \
-    cd /opt/microsoft/mlserver/9.3.0/runtime/python/bin && \
-#
-# Layer Cleanup
-  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-  chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
-
-USER ubuntu
-CMD /bin/bash
