@@ -88,25 +88,31 @@ RUN \
 #
   # Optionally, if your system does not have the https apt transport option
     apt-get clean && apt-get update && \
-    cd /tmp && apt-get install -y --no-install-recommends apt-transport-https && \
-  # Add the **azure-cli** repo to your apt sources list
-    AZ_REPO=$(lsb_release -cs) && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | tee /etc/apt/sources.list.d/azure-cli.list && \
-  # Set the location of the package repo the "prod" directory containing the distribution.
-  # This example specifies 16.04. Replace with 14.04 if you want that version
-    wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb && \
-  # Register the repo
-    dpkg -i packages-microsoft-prod.deb && \
-  # Verify whether the "microsoft-prod.list" configuration file exists
-    ls -la /etc/apt/sources.list.d/ && \
-  # Add the Microsoft public signing key for Secure APT
-  # NOTE: get MS key from Ubuntu keyserver, since ms is giving issues with network/proxy
+    cd /tmp && apt-get install -y --no-install-recommends apt-transport-https wget && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ xenial main" | tee /etc/apt/sources.list.d/azure-cli.list && \
+    wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O /tmp/prod.deb && \
+    dpkg -i /tmp/prod.deb && rm -f /tmp/prod.deb && \
+    # NOTE: get MS key from Ubuntu keyserver, since ms is giving issues with network/proxy
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
-  # Update packages on your system
-    apt-get update -y && \
-  # Install the server
-    apt-get install -y  --no-install-recommends -f microsoft-mlserver-all-9.3.0 && \
-  # Activate the server
+    # && apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
+    apt-get -y update && \
+    apt-get install -y microsoft-r-open-foreachiterators-3.4.3 && \
+    apt-get install -y microsoft-r-open-mkl-3.4.3 && \
+    apt-get install -y microsoft-r-open-mro-3.4.3 && \
+    apt-get install -y microsoft-mlserver-packages-r-9.3.0 && \
+    apt-get install -y microsoft-mlserver-python-9.3.0 && \
+    apt-get install -y microsoft-mlserver-packages-py-9.3.0 && \
+    apt-get install -y microsoft-mlserver-mml-r-9.3.0 && \
+    apt-get install -y microsoft-mlserver-mml-py-9.3.0 && \
+    apt-get install -y microsoft-mlserver-mlm-r-9.3.0 && \
+    apt-get install -y microsoft-mlserver-mlm-py-9.3.0 && \
+    apt-get install -y azure-cli=2.0.26-1~xenial && \
+    apt-get install -y dotnet-runtime-2.0.0 && \
+    # apt-get install -y microsoft-mlserver-adminutil-9.3.0 && \
+    # apt-get install -y microsoft-mlserver-config-rserve-9.3.0 && \
+    # apt-get install -y microsoft-mlserver-computenode-9.3.0 && \
+    # apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
+    apt-get clean && \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
   # List installed packages as a verification step
     apt list --installed | grep microsoft && \
@@ -122,6 +128,7 @@ RUN \
     echo 'alias python=mlserver-python' >> /home/ubuntu/.bashrc && \
     echo 'alias python3=mlserver-python' >> /home/ubuntu/.bashrc && \
     echo 'alias R=Revo64' >> /home/ubuntu/.bashrc && \
+    echo 'alias ipython=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/ipython' && \
     source /home/ubuntu/.bashrc && \
     cd /opt/microsoft/mlserver/9.3.0/runtime/python/bin && \
 #
