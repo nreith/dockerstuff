@@ -127,7 +127,7 @@ RUN \
     echo 'alias python=mlserver-python' >> /home/ubuntu/.bashrc && \
     echo 'alias python3=mlserver-python' >> /home/ubuntu/.bashrc && \
     echo 'alias R=Revo64' >> /home/ubuntu/.bashrc && \
-    echo 'alias ipython=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/ipython' && \
+    echo 'alias ipython=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/ipython' >> /home/ubuntu/.bashrc && \
     source /home/ubuntu/.bashrc && \
     cd /opt/microsoft/mlserver/9.3.0/runtime/python/bin && \
 #
