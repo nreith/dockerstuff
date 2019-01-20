@@ -55,7 +55,9 @@ RUN apt-get update \
 && . /etc/os-release \
 && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $UBUNTU_CODENAME main" | \
   tee /etc/apt/sources.list.d/azure-cli.list \
-&& apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
+# && apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
+# MS one above doesn't work, so getting ubuntu key instead
+&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
 && apt-get update \
 && apt-get install -y azure-cli apt-get dotnet-runtime-2.0.0 microsoft-r-open-foreachiterators-3.4.3 \
   microsoft-r-open-mkl-3.4.3 microsoft-r-open-mro-3.4.3 microsoft-mlserver-packages-r-9.3.0 \
