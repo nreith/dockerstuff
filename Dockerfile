@@ -77,7 +77,7 @@ RUN apt-get update \
 && apt-get install -y microsoft-mlserver-computenode-9.3.0 \
 && apt-get install -y microsoft-mlserver-webnode-9.3.0 \
 && apt-get clean \
-&& /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh
+&& /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh \
 && alias python=mlserver-python \
 && alias python3=mlserver-python \
 && alias R=Revo64 \
