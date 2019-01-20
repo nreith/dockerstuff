@@ -52,20 +52,16 @@ RUN apt-get update \
 && apt-get install -y --no-install-recommends \
   apt-transport-https \
 && cd /tmp \
-&& wget http://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb \
-&& dpkg -i packages-microsoft-prod.deb \
-&& apt-get update \
-&& apt-get install -y --no-install-recommends \
-  microsoft-r-client-packages-3.4.3 \
 && . /etc/os-release \
 && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $UBUNTU_CODENAME main" | \
   tee /etc/apt/sources.list.d/azure-cli.list \
 && apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
 && apt-get update \
-&& apt-get install -y azure-cli \
-  microsoft-mlserver-packages-r-9.3.0 microsoft-mlserver-python-9.3.0 microsoft-mlserver-packages-py-9.3.0 \
-  microsoft-mlserver-mml-r-9.3.0 microsoft-mlserver-mml-py-9.3.0 \
-  microsoft-mlserver-mlm-r-9.3.0 microsoft-mlserver-mlm-py-9.3.0 \
+&& apt-get install -y azure-cli apt-get microsoft-r-open-foreachiterators-3.4.3 \
+  microsoft-r-open-mkl-3.4.3 microsoft-r-open-mro-3.4.3 microsoft-mlserver-packages-r-9.3.0 \
+  microsoft-mlserver-mml-r-9.3.0 microsoft-mlserver-mlm-r-9.3.0 \
+  microsoft-mlserver-python-9.3.0 microsoft-mlserver-packages-py-9.3.0 \
+  microsoft-mlserver-mml-py-9.3.0 microsoft-mlserver-mlm-py-9.3.0 \
   microsoft-mlserver-adminutil-9.3 microsoft-mlserver-computenode-9.3 \
   microsoft-mlserver-config-rserve-9.3 microsoft-mlserver-webnode-9.3 \
 && /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh -a -l \
