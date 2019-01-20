@@ -57,7 +57,7 @@ RUN apt-get update \
   tee /etc/apt/sources.list.d/azure-cli.list \
 && apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 \
 && apt-get update \
-&& apt-get install -y azure-cli apt-get microsoft-r-open-foreachiterators-3.4.3 \
+&& apt-get install -y azure-cli apt-get dotnet-runtime-2.0.0 microsoft-r-open-foreachiterators-3.4.3 \
   microsoft-r-open-mkl-3.4.3 microsoft-r-open-mro-3.4.3 microsoft-mlserver-packages-r-9.3.0 \
   microsoft-mlserver-mml-r-9.3.0 microsoft-mlserver-mlm-r-9.3.0 \
   microsoft-mlserver-python-9.3.0 microsoft-mlserver-packages-py-9.3.0 \
@@ -71,7 +71,7 @@ RUN apt-get update \
 && rm -rf /tmp/* \
 && apt-get autoremove -y \
 && apt-get autoclean -y \
-&& rm -rf /var/lib/apt/lists/*
+&& rm -rf /var/lib/apt/lists/* \
 && chown -R ubuntu:ubuntu /home/ubuntu \
 && chown -R ubuntu:ubuntu /opt \
 && chown -R ubuntu:ubuntu /tmp
