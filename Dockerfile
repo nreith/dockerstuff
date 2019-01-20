@@ -112,7 +112,6 @@ RUN \
     # apt-get install -y microsoft-mlserver-config-rserve-9.3.0 && \
     # apt-get install -y microsoft-mlserver-computenode-9.3.0 && \
     # apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
-    apt-get clean && \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
   # List installed packages as a verification step
     apt list --installed | grep microsoft && \
@@ -120,7 +119,7 @@ RUN \
     dpkg --status microsoft-mlserver-packages-r-9.3.0 && \
     dpkg --status microsoft-mlserver-packages-py-9.3.0 && \
   # PATHS
-    echo 'export LD_LIBRARY_PATH=/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH' >> /home/ubuntu/.bashrc \ 
+    echo 'export LD_LIBRARY_PATH=/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH' >> /home/ubuntu/.bashrc && \ 
 	  R CMD javareconf && \
     echo 'export PATH="$PATH:/opt/microsoft/mlserver/9.3.0/runtime/python/bin/"' >> /home/ubuntu/.bashrc && \
     echo 'export PATH="$PATH:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/"' >> /home/ubuntu/.bashrc && \
@@ -135,6 +134,3 @@ RUN \
 # Layer Cleanup
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt/ && chown -R ubuntu:ubuntu /tmp/
-
-USER ubuntu
-CMD /bin/bash
