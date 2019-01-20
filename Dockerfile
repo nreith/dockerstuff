@@ -1,7 +1,3 @@
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-# phusion/baseimage - ML-SERVER: Py3.x, R3.x.x, and Julia 1.x.x
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-
 FROM ubuntu:16.04
 LABEL maintaner=nreith@gmail.com
 # Use Bash as Default Shell instead of sh
@@ -18,9 +14,7 @@ TERM=xterm-256color \
 LD_LIBRARY_PATH=/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH \
 PATH=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/:$PATH
 
-RUN groupadd -g 12574 ubuntu \
-&& useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu \
-&& apt-get update \
+RUN apt-get update \
 && apt-get install -y --no-install-recommends \
   apt-utils \
   bash-completion \
