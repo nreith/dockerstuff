@@ -79,6 +79,7 @@ RUN apt-get update \
 && alias python=mlserver-python \
 && alias python3=mlserver-python \
 && alias R=Revo64 \
+# Layer Cleanup
 && rm -rf /tmp/* \
 && apt-get autoremove -y \
 && apt-get autoclean -y \
