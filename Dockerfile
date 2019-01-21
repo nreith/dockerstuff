@@ -5,6 +5,7 @@ SHELL ["/bin/bash", "-c"]
 # Run as root
 USER root
 
+# Other Environment variables
 ENV LC_ALL=en_US.UTF-8 \
 LANG=en_US.UTF-8 \
 LANGUAGE=en_US.UTF-8 \
@@ -12,7 +13,11 @@ DEBIAN_FRONTEND=noninteractive \
 TZ=America/Chicago \
 TERM=xterm-256color \
 LD_LIBRARY_PATH=/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH \
-PATH=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/:/opt/microsoft/mlserver/9.3.0/runtime/R/bin/:$PATH
+PATH=/opt/microsoft/mlserver/9.3.0/runtime/python/bin:/opt/microsoft/mlserver/9.3.0/runtime/R/bin:$PATH \
+PYTHONIOENCODING=utf-8 \
+LANG=en_US.UTF-8 \
+JOBLIB_TEMP_FOLDER=/tmp \
+LC_ALL=en_US.UTF-8
 
 RUN apt-get update \
 && apt-get install -y --no-install-recommends \
@@ -84,3 +89,112 @@ RUN apt-get update \
 && apt-get autoremove -y \
 && apt-get autoclean -y \
 && rm -rf /var/lib/apt/lists/*
+
+####################################################################################
+# Domino-Specific Config
+####################################################################################
+RUN \
+#
+# Add User needed by Domino
+    groupadd -g 12574 ubuntu && \
+    useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu && \
+# A bunch of Dell-specific, necessary stuff for network, etc.
+    # Fix annoying "writing more than expected" error with apt/apt-get when using corporate proxy
+    rm -rf /var/lib/apt/lists/* && \
+    echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99fixbadproxy && \
+    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
+    echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
+    apt-get update -o Acquire::CompressionTypes::Order::=gz && \
+    echo "Acquire::http::proxy \"$http_proxy\";" > /etc/apt/apt.conf && \
+    echo "Acquire::https::proxy \"$https_proxy\";" >> /etc/apt/apt.conf && \
+    echo "Acquire::ftp::proxy \"$http_proxy\";" >> /etc/apt/apt.conf && \
+    apt-get clean && apt-get update && \
+  # chown user permissions for some folders
+    chown -R ubuntu:ubuntu /home/ubuntu/ && \
+    chown -R ubuntu:ubuntu /opt && \
+    chown -R ubuntu:ubuntu /tmp && \
+#
+# Domino SSH and Workspaces Stuff
+#
+# ADD SSH start script
+    mkdir -p /scripts && \
+    echo '#!/bin/bash'> /scripts/start-ssh && \
+    echo 'service ssh start' >> /scripts/start-ssh && \
+    chmod +x /scripts/start-ssh && \
+    source /home/ubuntu/.bashrc && \
+    echo 'source /home/ubuntu/.bashrc' >> /home/ubuntu/.domino-defaults && \
+# Installing Notebooks,Workspaces,IDEs,etc
+  # Clone in workspaces install scripts
+    mkdir -p /var/opt/workspaces && \
+    cd /tmp && wget https://github.com/dominodatalab/workspace-configs/archive/2019q1-v1.1.zip && unzip 2019q1-v1.1.zip && \
+    cp -Rf workspace-configs*/* /var/opt/workspaces && \
+    rm -rf /tmp/workspace-configs* && \
+  #
+  # Install Jupyterlab from workspaces
+    # chmod +x /var/opt/workspaces/Jupyterlab/install && \
+    # /var/opt/workspaces/Jupyterlab/install && \
+  #
+  # Install Zeppelin from workspaces
+    # chmod +x /var/opt/workspaces/Zeppelin/install && \
+    # /var/opt/workspaces/Zeppelin/install && \
+  #
+  # Install h20 from workspaces
+    # chmod +x /var/opt/workspaces/h2o/install && \
+    # /var/opt/workspaces/h2o/install && \
+  #
+  # Install Jupyter-Tensorboard from workspaces
+    # chmod +x /var/opt/workspaces/jupyter-tensorboard/install && \
+    # /var/opt/workspaces/jupyter-tensorboard/install && \
+  #
+  # Install Jupyter Notebooks from workspaces
+    chmod +x /var/opt/workspaces/jupyter/install && \
+    /var/opt/workspaces/jupyter/install && \
+  #
+  # Install PySpark Notebooks from workspaces
+    # chmod +x /var/opt/workspaces/pyspark/install && \
+    # /var/opt/workspaces/pyspark/install && \
+  #
+  # Install Rstudio from workspaces
+    # Little fix so previous existing folder doesn't cause issue with mkdir
+    sed -i 's/mkdir /mkdir -p /g' /var/opt/workspaces/rstudio/install && \
+    chmod +x /var/opt/workspaces/rstudio/install && \
+    /var/opt/workspaces/rstudio/install && \
+  #
+  # Add update .Rprofile with Domino customizations
+    mv /var/opt/workspaces/rstudio/.Rprofile /home/ubuntu/.Rprofile && \
+    chown ubuntu:ubuntu /home/ubuntu/.Rprofile && \
+  #
+  # Install superset from workspaces
+    # chmod +x /var/opt/workspaces/superset/install && \
+    # /var/opt/workspaces/superset/install && \
+#
+# Layer Cleanup
+rm -rf /tmp/* && \
+apt-get autoremove -y && \
+apt-get autoclean -y && \
+rm -rf /var/lib/apt/lists/*
+
+####################################################################################
+# Additional Requested Packages
+####################################################################################
+RUN \
+  alias ipython=/opt/microsoft/mlserver/9.3.0/runtime/python/bin/ipython && \
+#
+  # USER REQUESTED PACKAGES
+    apt-get update && \
+    apt-get install -y \
+        net-tools && \
+  # Python Packages
+    pip install \
+        flashtext \
+        pyodbc \
+        spacy && \
+#
+# Layer Cleanup
+rm -rf /tmp/* && \
+apt-get autoremove -y && \
+apt-get autoclean -y && \
+rm -rf /var/lib/apt/lists/*
+
+USER ubuntu
+CMD /bin/bash
