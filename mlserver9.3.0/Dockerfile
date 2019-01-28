@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM phusion/baseimage:latest
 LABEL maintaner=nreith@gmail.com
 # Use Bash as Default Shell instead of sh
 SHELL ["/bin/bash", "-c"]
@@ -19,8 +19,25 @@ LANG=en_US.UTF-8 \
 JOBLIB_TEMP_FOLDER=/tmp \
 LC_ALL=en_US.UTF-8
 
+RUN \
+# Add User
+    groupadd -g 12574 ubuntu && \
+    useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu && \
+# Environment Variables and Paths
+    echo 'LC_ALL="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+    echo 'LANG="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+    echo 'LANGUAGE="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+    echo 'DEBIAN_FRONTEND="noninteractive"' >> /home/$USER/.bashrc && \
+    echo 'TZ="America/Chicago"' >> /home/$USER/.bashrc && \
+    echo 'TERM="xterm-256color"' >> /home/$USER/.bashrc && \
+    echo 'PYTHONIOENCODING="utf-8"' >> /home/$USER/.bashrc && \
+    echo 'LANG="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+    echo 'JOBLIB_TEMP_FOLDER="/tmp "' >> /home/$USER/.bashrc && \
+    echo 'LC_ALL="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+
+
 RUN apt-get update \
-&& apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
   apt-utils \
   bash-completion \
   ca-certificates \
@@ -50,12 +67,29 @@ RUN apt-get update \
   wget \
   zip \
   zlib1g \
-&& echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
-&& locale-gen en_US.utf8 \
-&& /usr/sbin/update-locale LANG=en_US.UTF-8 \
-&& apt-get update \
-&& cd /tmp \
-&& . /etc/os-release \
+  && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+  && locale-gen en_US.utf8 \
+  && /usr/sbin/update-locale LANG=en_US.UTF-8 \
+  && apt-get update \
+  && cd /tmp \
+  && . /etc/os-release \
+#
+# Fix annoying "writing more than expected" error with apt/apt-get when using corporate proxy
+    echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99fixbadproxy && \
+    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
+    echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
+    apt-get update -o Acquire::CompressionTypes::Order::=gz && \
+    echo "Acquire::http::proxy \"$http_proxy\";" > /etc/apt/apt.conf && \
+    echo "Acquire::https::proxy \"$https_proxy\";" >> /etc/apt/apt.conf && \
+    echo "Acquire::ftp::proxy \"$http_proxy\";" >> /etc/apt/apt.conf && \
+    apt-get clean && apt-get update && \
+
+
+
+echo 'LD_LIBRARY_PATH="/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH"' >> /home/$USER/.bashrc && \
+    echo 'PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:/opt/microsoft/mlserver/9.3.0/runtime/R/bin:$PATH"' >> /home/$USER/.bashrc && \
+echo 'source /home/ubuntu/.bashrc' >> /etc/environment && \
+
 && apt-get install -y --no-install-recommends apt-transport-https wget \
 && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ xenial main" | tee /etc/apt/sources.list.d/azure-cli.list \
 && wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O /tmp/prod.deb \
