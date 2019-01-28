@@ -22,16 +22,17 @@ RUN \
     groupadd -g 12574 ubuntu && \
     useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu && \
 # Environment Variables and Paths
-    echo 'LC_ALL="en_US.UTF-8"' >> /home/$USER/.bashrc && \
-    echo 'LANG="en_US.UTF-8"' >> /home/$USER/.bashrc && \
-    echo 'LANGUAGE="en_US.UTF-8"' >> /home/$USER/.bashrc && \
-    echo 'DEBIAN_FRONTEND="noninteractive"' >> /home/$USER/.bashrc && \
-    echo 'TZ="America/Chicago"' >> /home/$USER/.bashrc && \
-    echo 'TERM="xterm-256color"' >> /home/$USER/.bashrc && \
-    echo 'PYTHONIOENCODING="utf-8"' >> /home/$USER/.bashrc && \
-    echo 'LANG="en_US.UTF-8"' >> /home/$USER/.bashrc && \
-    echo 'JOBLIB_TEMP_FOLDER="/tmp "' >> /home/$USER/.bashrc && \
-    echo 'LC_ALL="en_US.UTF-8"' >> /home/$USER/.bashrc && \
+    echo 'LC_ALL="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+    echo 'LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+    echo 'LANGUAGE="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+    echo 'DEBIAN_FRONTEND="noninteractive"' >> /home/ubuntu/.bashrc && \
+    echo 'TZ="America/Chicago"' >> /home/ubuntu/.bashrc && \
+    echo 'TERM="xterm-256color"' >> /home/ubuntu/.bashrc && \
+    echo 'PYTHONIOENCODING="utf-8"' >> /home/ubuntu/.bashrc && \
+    echo 'LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+    echo 'JOBLIB_TEMP_FOLDER="/tmp "' >> /home/ubuntu/.bashrc && \
+    echo 'LC_ALL="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+    source /home/ubuntu/.bashrc && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     apt-utils \
@@ -77,8 +78,8 @@ RUN \
     zip \
     zlib1g && \
 # Some ubuntu Config
-    echo "export TERM=xterm-256color" >> /home/$USER/.bashrc && \
-    echo "export DEBIAN_FRONTEND=noninteractive" >> /home/$USER/.bashrc && \
+    echo "export TERM=xterm-256color" >> /home/ubuntu/.bashrc && \
+    echo "export DEBIAN_FRONTEND=noninteractive" >> /home/ubuntu/.bashrc && \
     echo "Chicago/USA" > /etc/timezone && \
     dpkg-reconfigure --frontend noninteractive tzdata && \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
@@ -98,24 +99,28 @@ RUN \
     mkdir -p /etc/mdadm && \
     touch /etc/mdadm/mdadm.conf && \
     echo "ARRAY <ignore> devices=/dev/sda" >> /etc/mdadm/mdadm.conf && \
-# Install Java
-    add-apt-repository ppa:linuxuprising/java && \
+# Install Oracle Java 8
+    add-apt-repository ppa:webupd8team/java && \
     apt-get update -y && \
-    echo oracle-java11-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-    apt-get install -y --no-install-recommends oracle-java11-installer && \
-    apt-get install oracle-java11-set-default && \
-#
+    echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    apt-get install -y oracle-java8-installer && \
+    apt-get install oracle-java8-set-default && \
 # ML SERVER 9.3.0
     apt-get install -y --no-install-recommends apt-transport-https wget && \
-    echo 'LD_LIBRARY_PATH="/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH"' >> /home/$USER/.bashrc && \
-    echo 'PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:/opt/microsoft/mlserver/9.3.0/runtime/R/bin:$PATH"' >> /home/$USER/.bashrc && \
+    echo 'LD_LIBRARY_PATH="/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH"' >> /home/ubuntu/.bashrc && \
+    echo 'PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:/opt/microsoft/mlserver/9.3.0/runtime/R/bin:$PATH"' >> /home/ubuntu/.bashrc && \
     echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ xenial main" | tee /etc/apt/sources.list.d/azure-cli.list && \
+    echo "alias python=mlserver-python" >> /home/ubuntu.bashrc && \
+    echo "alias python3=mlserver-python" >> /home/ubuntu.bashrc && \
+    echo "alias R=Revo64" >> /home/ubuntu.bashrc && \
+    source /home/ubuntu/.bashrc && \
     wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O /tmp/prod.deb && \
     dpkg -i /tmp/prod.deb && \
     rm -f /tmp/prod.deb && \
-    #apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
+    # apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
+    # The one above for ms doesn't work, so using the ubuntu key below
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
-    apt-get -y update && \
+    apt-get -y update --fix-missing && \
     apt-get install -y microsoft-r-open-foreachiterators-3.4.3 && \
     apt-get install -y microsoft-r-open-mkl-3.4.3 && \
     apt-get install -y microsoft-r-open-mro-3.4.3 && \
@@ -132,13 +137,10 @@ RUN \
     apt-get install -y microsoft-mlserver-config-rserve-9.3.0 && \
     apt-get install -y microsoft-mlserver-computenode-9.3.0 && \
     apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
+    apt-get clean && \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
-    alias python=mlserver-python && \
-    alias python3=mlserver-python && \
-    alias R=Revo64 && \
-#
 # Layer Cleanup
-rm -rf /tmp/* && \
-apt-get autoremove -y && \
-apt-get autoclean -y && \
-rm -rf /var/lib/apt/lists/*
+    rm -rf /tmp/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    rm -rf /var/lib/apt/lists/*
