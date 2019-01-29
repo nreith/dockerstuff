@@ -139,6 +139,69 @@ RUN \
     apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
     apt-get clean && \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
+# DATABASE DRIVERS
+    apt-get clean -y && apt-get update -y && \
+    cd /tmp && git clone https://github.com/nreith/devopsscripts.git && \
+    cd devopsscripts/dbdrivers && chmod +x * && \
+# MS SQL Server 17 Drivers
+    ./mssqlserver17.sh && \
+# Oracle Instantclient 12.1 Drivers
+    ./oraclesqlinstantclient12_1.sh && \
+# Postgresql 10 Drivers
+    # ./postgresql10.sh && \
+# Teradata SQL 16.20 Drivers
+    ./teradatasql16_20.sh && \
+# Domino SSH and Workspaces Stuff
+# ADD SSH start script
+    mkdir -p /scripts && \
+    echo '#!/bin/bash'> /scripts/start-ssh && \
+    echo 'service ssh start' >> /scripts/start-ssh && \
+    chmod +x /scripts/start-ssh && \
+    source /home/ubuntu/.bashrc && \
+    apt-get update -y && \
+# Installing Notebooks,Workspaces,IDEs,etc
+  # Clone in workspaces install scripts
+    mkdir -p /var/opt/workspaces && \
+    cd /tmp && wget https://github.com/dominodatalab/workspace-configs/archive/2019q1-v1.1.zip && unzip 2019q1-v1.1.zip && \
+    cp -Rf workspace-configs*/* /var/opt/workspaces && \
+    rm -rf /tmp/workspace-configs* && \
+  #
+  # Install Jupyter Notebooks from workspaces
+    chmod +x /var/opt/workspaces/jupyter/install && \
+    /var/opt/workspaces/jupyter/install && \
+  #
+  # Install Rstudio from workspaces
+    chmod +x /var/opt/workspaces/rstudio/install && \
+    /var/opt/workspaces/rstudio/install && \
+  #
+  # Add update .Rprofile with Domino customizations
+    mv /var/opt/workspaces/rstudio/.Rprofile /home/ubuntu/.Rprofile && \
+    chown ubuntu:ubuntu /home/ubuntu/.Rprofile && \
+  #
+  # Install Jupyterlab from workspaces
+    chmod +x /var/opt/workspaces/Jupyterlab/install && \
+    /var/opt/workspaces/Jupyterlab/install && \
+  #
+  # Install Jupyter-Tensorboard from workspaces
+  #  chmod +x /var/opt/workspaces/jupyter-tensorboard/install && \
+  #  /var/opt/workspaces/jupyter-tensorboard/install && \
+  #
+  # Install Zeppelin from workspaces
+  #  chmod +x /var/opt/workspaces/Zeppelin/install && \
+  #  /var/opt/workspaces/Zeppelin/install && \
+  #
+  # Install PySpark Notebooks from workspaces
+  #  chmod +x /var/opt/workspaces/pyspark/install && \
+  #  /var/opt/workspaces/pyspark/install && \
+  #
+  # Install superset from workspaces
+  #  chmod +x /var/opt/workspaces/superset/install && \
+  #  /var/opt/workspaces/superset/install && \
+  #    
+  # Install h20 from workspaces
+  #  chmod +x /var/opt/workspaces/h2o/install && \
+  #  /var/opt/workspaces/h2o/install && \
+#
 # Layer Cleanup
     rm -rf /tmp/* && \
     apt-get autoremove -y && \
