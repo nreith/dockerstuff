@@ -17,6 +17,8 @@ LANG=en_US.UTF-8 \
 JOBLIB_TEMP_FOLDER=/tmp \
 LC_ALL=en_US.UTF-8
 
+# Ubuntu config and MS ML SERVER 9.3.0
+
 RUN \
 # Add User
     groupadd -g 12574 ubuntu && \
@@ -139,8 +141,17 @@ RUN \
     apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
     apt-get clean && \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
+# Layer Cleanup
+    rm -rf /tmp/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    rm -rf /var/lib/apt/lists/*
+    
 # DATABASE DRIVERS
+
+RUN \
     apt-get clean -y && apt-get update -y && \
+    source /home/ubuntu/.bashrc && \
     cd /tmp && git clone https://github.com/nreith/devopsscripts.git && \
     cd devopsscripts/dbdrivers && chmod +x * && \
 # MS SQL Server 17 Drivers
@@ -151,7 +162,17 @@ RUN \
     # ./postgresql10.sh && \
 # Teradata SQL 16.20 Drivers
     ./teradatasql16_20.sh && \
+# Layer Cleanup
+    rm -rf /tmp/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    rm -rf /var/lib/apt/lists/*
+
 # Domino SSH and Workspaces Stuff
+
+RUN \
+    apt-get clean -y && apt-get update -y && \
+    source /home/ubuntu/.bashrc && \
 # ADD SSH start script
     mkdir -p /scripts && \
     echo '#!/bin/bash'> /scripts/start-ssh && \
