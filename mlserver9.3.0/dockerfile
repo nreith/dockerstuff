@@ -8,7 +8,6 @@ USER root
 
 # Environment variables
 #######################
-
 ENV \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
@@ -25,7 +24,6 @@ ENV \
 
 # Ubuntu config
 ###############
-
 RUN \
 # Add User
     groupadd -g 12574 ubuntu && \
