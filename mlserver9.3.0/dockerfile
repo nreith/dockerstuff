@@ -1,13 +1,16 @@
-# FROM phusion/baseimage:latest
+FROM phusion/baseimage:0.11
 
 LABEL maintaner="Nick Reith <nreith@gmail.com>"
+
 # Use Bash as Default Shell instead of sh
 SHELL ["/bin/bash", "-c"]
+
 # Run as root
 USER root
 
 # Environment variables
 #######################
+
 ENV \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
@@ -24,6 +27,7 @@ ENV \
 
 # Ubuntu config
 ###############
+
 RUN \
 # Add User
     groupadd -g 12574 ubuntu && \
@@ -112,7 +116,12 @@ RUN \
     echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
     apt-get install -y oracle-java8-installer && \
     apt-get install oracle-java8-set-default && \    
-#
+# Layer Cleanup
+    rm -rf /tmp/* && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    rm -rf /var/lib/apt/lists/*
+
 # ML SERVER 9.3.0
 #################
 RUN \
@@ -151,12 +160,15 @@ RUN \
     /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
 # Turn off anonymous telemtry for MS ML Server
     cd /tmp && R -e 'library(RevoScaleR); rxPrivacyControl(FALSE)' && \
-    mlserver-python -c 'import revoscalepy; revoscalepy.rx_privacy_control(False)'
+    mlserver-python -c 'import revoscalepy; revoscalepy.rx_privacy_control(False)' && \
 # Layer Cleanup
     rm -rf /tmp/* && \
     apt-get autoremove -y && \
     apt-get autoclean -y && \
     rm -rf /var/lib/apt/lists/*
- 
+
+# Set user for container
 USER ubuntu
-CMD /bin/bash
+
+# Use baseimage-docker's init system.
+CMD ["/sbin/my_init"]
