@@ -117,10 +117,7 @@ RUN \
     apt-get install -y oracle-java8-installer && \
     apt-get install oracle-java8-set-default && \    
 # Layer Cleanup
-    rm -rf /tmp/* && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # ML SERVER 9.3.0
 #################
@@ -162,11 +159,8 @@ RUN \
     cd /tmp && R -e 'library(RevoScaleR); rxPrivacyControl(FALSE)' && \
     mlserver-python -c 'import revoscalepy; revoscalepy.rx_privacy_control(False)' && \
 # Layer Cleanup
-    rm -rf /tmp/* && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    rm -rf /var/lib/apt/lists/*
-
+    apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    
 # Set user for container
 USER ubuntu
 
