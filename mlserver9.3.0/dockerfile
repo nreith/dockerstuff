@@ -3,7 +3,8 @@
 # ubuntu16.04-mlserver9.3.0-py3.5
 #############################################################################################
 # Ubuntu-16.04 with simple basics
-# + Microsoft ML Server 9.3.0
+# + Microsoft ML Server 9.3.0 
+# (Anaconda Python + Py basics like azureml only. No R. No server stuff. No Py extras.)
 # + MS SQL Server 17 and Teradata 16.20 drivers
 
 # Docker Build Config
