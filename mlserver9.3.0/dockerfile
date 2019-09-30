@@ -1,163 +1,151 @@
-FROM phusion/baseimage:0.10.2
 
-LABEL maintaner="Nick Reith <nreith@gmail.com>"
+# Image Name:
+# ubuntu16.04-mlserver9.3.0-py3.5
+#############################################################################################
+# Ubuntu-16.04 with simple basics
+# + Microsoft ML Server 9.3.0
+# + MS SQL Server 17 and Teradata 16.20 drivers
 
-# Use Bash as Default Shell instead of sh
+# Docker Build Config
+#############################################################################################
+
+FROM ubuntu:16.04
+
+LABEL maintaners="Nick Reith <nreith@gmail.com>"
 SHELL ["/bin/bash", "-c"]
-
-# Run as root
 USER root
-
-# Environment variables
-#######################
-
 ENV \
-    LC_ALL=en_US.UTF-8 \
-    LANG=en_US.UTF-8 \
-    LANGUAGE=en_US.UTF-8 \
-    DEBIAN_FRONTEND=noninteractive \
-    TZ=America/Chicago \
-    TERM=xterm-256color \
-    PYTHONIOENCODING=utf-8 \
-    LANG=en_US.UTF-8 \
-    JOBLIB_TEMP_FOLDER=/tmp \
-# Paths for Python and R
-    PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:${PATH}" \
-    PATH="/opt/microsoft/mlserver/9.3.0/runtime/R/bin:${PATH}"
+  TERM="xterm" \
+  TZ="US/Central" \
+  DEBIAN_FRONTEND="noninteractive"
 
-# Ubuntu config
-###############
+# Ubuntu Config
+#############################################################################################
 
 RUN \
 # Add User
-    groupadd -g 12574 ubuntu && \
-    useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu && \
-# Fix annoying "writing more than expected" error with apt/apt-get when using corporate proxy
-    echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99fixbadproxy && \
-    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
-    echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy && \
-    apt-get clean && apt-get update -o Acquire::CompressionTypes::Order::=gz && \
-    echo "Acquire::http::proxy \"$http_proxy\";" > /etc/apt/apt.conf && \
-    echo "Acquire::https::proxy \"$https_proxy\";" >> /etc/apt/apt.conf && \
-    echo "Acquire::ftp::proxy \"$http_proxy\";" >> /etc/apt/apt.conf && \
-# Annoying but benign: "W: mdadm: /etc/mdadm/mdadm.conf defines no arrays."
-    mkdir -p /etc/mdadm && \
-    touch /etc/mdadm/mdadm.conf && \
-    echo "ARRAY <ignore> devices=/dev/sda" >> /etc/mdadm/mdadm.conf && \
-# Environment Variables and Paths
-    echo 'LC_ALL="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
-    echo 'LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
-    echo 'LANGUAGE="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
-    echo 'DEBIAN_FRONTEND="noninteractive"' >> /home/ubuntu/.bashrc && \
-    echo 'TZ="America/Chicago"' >> /home/ubuntu/.bashrc && \
-    echo 'TERM="xterm-256color"' >> /home/ubuntu/.bashrc && \
-    echo 'PYTHONIOENCODING="utf-8"' >> /home/ubuntu/.bashrc && \
-    echo 'LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
-    echo 'JOBLIB_TEMP_FOLDER="/tmp "' >> /home/ubuntu/.bashrc && \
-    echo 'LC_ALL="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
-    source /home/ubuntu/.bashrc && \
-    apt-get install -y --no-install-recommends \
-    apt-utils \
+  groupadd -g 12574 ubuntu && \
+  useradd -u 12574 -g 12574 -m -N -s /bin/bash ubuntu && \
+#
+# Installing apt-utils first to avoid error message
+  apt-get clean && apt-get update && apt-get install -y apt-utils --no-install-recommends && \
+#
+# Commonly installed packages
+  apt-get install -y --no-install-recommends \
     apt-transport-https \
-    bash-completion \
     build-essential \
     ca-certificates \
     curl \
-    dialog \
-    ed \
-    file \
-    fonts-texgyre \
-    g++ \
-    gfortran \
+    dialog `useful user dialogs` \
+    file `recognizes filetype` \
     git \
-    gsfonts \
-    less \
-    libbz2-1.0 \
-    libcurl3 \
-    libgomp1 \
-    libopenblas-dev \
-    libpango1.0-0 \
-    libpcre3 \
-    libpng16-16 \
-    libtiff5 \
-    liblzma5 \
-    libsm6 \
-    libxt6 \
-    libzmq3-dev \
-    locales \
-    make \
-    nano \
-    net-tools \
-    nodejs \
+    gnupg `for pgp keys` \
+    iputils-ping `network testing` \
+    locales `internationalization` \
+    nano `easy text editor` \
+    net-tools `ifconfig, etc.` \
     openssh-server \
-    python-software-properties \
-    software-properties-common \
-    tzdata \
-    tmux \
+    rsync `to sync for git/azure workflow` \
+    software-properties-common `necessary` \
     unzip \
-    vim \
+    vim `only 1mb` \
     wget \
-    zip \
-    zlib1g && \
-# Some ubuntu Config
-    echo "export TERM=xterm-256color" >> /home/ubuntu/.bashrc && \
-    echo "export DEBIAN_FRONTEND=noninteractive" >> /home/ubuntu/.bashrc && \
-    echo "Chicago/USA" > /etc/timezone && \
-    dpkg-reconfigure --frontend noninteractive tzdata && \
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
-    locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8 LC_MESSAGES=POSIX && dpkg-reconfigure locales && \
-    cd /tmp && . /etc/os-release && \
-# Install Oracle Java 8
-    add-apt-repository ppa:webupd8team/java && \
-    apt-get update -y && \
-    echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-    apt-get install -y oracle-java8-installer && \
-    apt-get install oracle-java8-set-default && \    
+    zip && \
+    # Trying to slim down a bit
+    # python-software-properties \ 
+    # bash-completion \
+    # fonts-texgyre \
+#
+# Install Open Java Runtime (Default = 8) (Untested with Domino)
+  apt-get install -y --no-install-recommends default-jre && \
+#
+# Timezone / Locale stuff
+  ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+  export DEBIAN_FRONTEND=noninteractive && \
+  apt-get install -y tzdata locales && \
+  dpkg-reconfigure --frontend noninteractive tzdata && \
+  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
+  locale-gen en_US.UTF-8 && update-locale LANG="en_US.UTF-8" LC_MESSAGES="POSIX" && \
+  dpkg-reconfigure --frontend noninteractive locales && \
+  cd /tmp && cat /etc/os-release && \
+#
+  echo 'export DEBIAN_FRONTEND="noninteractive"' >> /home/ubuntu/.bashrc && \
+  echo 'export LC_ALL="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+  echo 'export LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+  echo 'export LANGUAGE="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+  echo 'export TZ="US/Central"' >> /home/ubuntu/.bashrc && \
+  echo 'export PYTHONIOENCODING="utf-8"' >> /home/ubuntu/.bashrc && \
+  echo 'export LANG="en_US.UTF-8"' >> /home/ubuntu/.bashrc && \
+  echo 'export TERM="xterm-256color"' >> /home/ubuntu/.bashrc && \
+  echo 'export JOBLIB_TEMP_FOLDER="/tmp"' >> /home/ubuntu/.bashrc && \
+#
+# ML SERVER + DB Drivers Installs and Configs
+#############################################################################################
+#
+  source /home/ubuntu/.bashrc && \
+  # Set the location of the package repo the "prod" directory containing the distribution.
+  cd /tmp && wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb && \
+  # Register the repo
+  dpkg -i packages-microsoft-prod.deb && \
+  # Verify whether the "microsoft-prod.list" configuration file exists
+  ls -la /etc/apt/sources.list.d/ && \
+  # Install ML Server Python Components, minus optional pre-trained models
+  # and web/compute node or server admin stuff
+  apt-get -y update --fix-missing && \
+  apt-get install -y microsoft-mlserver-python-9.3.0 && \
+  # Tried to remove below, but revoscalepy is needed at least for the privacy thing below
+  apt-get install -y microsoft-mlserver-packages-py-9.3.0 && \
+  echo "export PATH=\"/opt/microsoft/mlserver/9.3.0/runtime/python/bin:$PATH\"" >> /home/ubuntu/.bashrc && \
+  export PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:$PATH" && \
+  source /home/ubuntu/.bashrc && \
+  # Turn off anonymous telemtry for MS ML Server
+  mlserver-python -c 'import revoscalepy; revoscalepy.rx_privacy_control(False)' && \
+#
+# Conda config (add conda-forge channel)
+  conda config --prepend channels conda-forge && \
+  cp /root/.condarc /home/ubuntu/.condarc && \
+# Capture pip freeze and conda list of current packages before anything changes (i.e. conda clean tipsy at the bottom)
+  echo "# pip freeze of original versions\n" > /opt/microsoft/mlserver/.pipfreeze_original && \
+  pip freeze >> /opt/microsoft/mlserver/.pipfreeze_original && \
+  echo "# conda list of original versions\n" > /opt/microsoft/mlserver/.condalist_original && \
+  conda list >> /opt/microsoft/mlserver/.condalist_original && \
+# Azure CLI
+# Requires the following, but already installed: ca-certificates curl apt-transport-https lsb-release gnupg
+  apt-get update && apt-get install azure-cli && \
+#
+# MS SQL ODBC Server Drivers
+  cd /tmp && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+  curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/microsoft-prod.list && \
+  apt-get update -y && \
+  ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 && \
+  # optional: for bcp and sqlcmd
+  ACCEPT_EULA=Y apt-get install -y --no-install-recommends mssql-tools && \
+  echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> /home/ubuntu/.bashrc && \
+  # optional: for unixODBC development headers
+  apt-get install -y --no-install-recommends unixodbc-dev && \
+  echo '' >> /etc/odbcinst.ini && \
+  echo '[ODBC Driver 17 for SQL Server]' >> /etc/odbcinst.ini && \
+  echo 'Description=Microsoft ODBC Driver 17 for SQL Server' >> /etc/odbcinst.ini && \
+  echo 'Driver=/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.2.so.0.1' >> /etc/odbcinst.ini && \
+  echo 'Threading=1' >> /etc/odbcinst.ini && \
+  echo 'UsageCount=1' >> /etc/odbcinst.ini && \
+  echo '' >> /etc/odbcinst.ini && \
+#
+# Teradata ODBC                                                                                                                   # TD
+  cd /tmp && wget https://stuff-for-devops.s3.amazonaws.com/dbdrivers/tdodbc1620__linux_indep.16.20.00.68-1.tar.gz && \
+  tar -xf tdodbc1620__ubuntu_indep.16.20.00.18-1.tar.gz && \
+  apt-get -f install -y --no-install-recommends lib32stdc++6 lib32gcc1 libc6-i386 && \
+  cd /tmp/tdodbc1620 && dpkg -i tdodbc1620-16.20.00.18-1.noarch.deb && \
+  echo '' >> /etc/odbcinst.ini && \
+  echo '[Teradata ODBC Driver 16.20]' >> /etc/odbcinst.ini && \
+  echo 'Description=Teradata Database ODBC Driver 16.20' >> /etc/odbcinst.ini && \
+  echo 'Driver=/opt/teradata/client/ODBC_64/lib/tdataodbc_sb64.so' >> /etc/odbcinst.ini && \
+  echo '# Note: Currently, Data Direct Driver Manager does not support Connection Pooling feature.' >> /etc/odbcinst.ini && \
+  echo '' >> /etc/odbcinst.ini && \
+#
+# make .bashrc work for root too
+  cat /home/ubuntu/.bashrc > /root/.bashrc && \
+# Ensure user permissions on certain folders to allow conda/pip installs
+  chown -R ubuntu:ubuntu /home/ubuntu/ && chown -R ubuntu:ubuntu /opt && chown -R ubuntu:ubuntu /tmp && \
 # Layer Cleanup
-    apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# ML SERVER 9.3.0
-#################
-RUN \
-    echo 'LD_LIBRARY_PATH="/opt/microsoft/mlserver/9.3.0/runtime/R/lib:$LD_LIBRARY_PATH"' >> /home/ubuntu/.bashrc && \
-    echo 'PATH="/opt/microsoft/mlserver/9.3.0/runtime/python/bin:/opt/microsoft/mlserver/9.3.0/runtime/R/bin:$PATH"' >> /home/ubuntu/.bashrc && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ xenial main" | tee /etc/apt/sources.list.d/azure-cli.list && \
-    echo "alias python=mlserver-python" >> /home/ubuntu.bashrc && \
-    echo "alias python3=mlserver-python" >> /home/ubuntu.bashrc && \
-    echo "alias R=Revo64" >> /home/ubuntu.bashrc && \
-    source /home/ubuntu/.bashrc && \
-    wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O /tmp/prod.deb && \
-    dpkg -i /tmp/prod.deb && \
-    rm -f /tmp/prod.deb && \
-    # apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
-    # The one above for ms doesn't work, so using the ubuntu key below
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893 && \
-    apt-get -y update --fix-missing && \
-    apt-get install -y microsoft-r-open-foreachiterators-3.4.3 && \
-    apt-get install -y microsoft-r-open-mkl-3.4.3 && \
-    apt-get install -y microsoft-r-open-mro-3.4.3 && \
-    apt-get install -y microsoft-mlserver-packages-r-9.3.0 && \
-    apt-get install -y microsoft-mlserver-python-9.3.0 && \
-    apt-get install -y microsoft-mlserver-packages-py-9.3.0 && \
-    apt-get install -y microsoft-mlserver-mml-r-9.3.0 && \
-    apt-get install -y microsoft-mlserver-mml-py-9.3.0 && \
-    apt-get install -y microsoft-mlserver-mlm-r-9.3.0 && \
-    apt-get install -y microsoft-mlserver-mlm-py-9.3.0 && \
-    apt-get install -y azure-cli=2.0.26-1~xenial && \
-    apt-get install -y dotnet-runtime-2.0.0 && \
-    apt-get install -y microsoft-mlserver-adminutil-9.3.0 && \
-    apt-get install -y microsoft-mlserver-config-rserve-9.3.0 && \
-    apt-get install -y microsoft-mlserver-computenode-9.3.0 && \
-    apt-get install -y microsoft-mlserver-webnode-9.3.0 && \
-    /opt/microsoft/mlserver/9.3.0/bin/R/activate.sh && \
-# Turn off anonymous telemtry for MS ML Server
-    # cd /tmp && R -e 'library(RevoScaleR); rxPrivacyControl(FALSE)' && \
-    # mlserver-python -c 'import revoscalepy; revoscalepy.rx_privacy_control(False)' && \
-# Layer Cleanup
-    apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Set user for container
-USER ubuntu
-
-# Use baseimage-docker's init system.
-CMD ["/sbin/my_init"]
+  apt-get clean && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && conda clean -tipsy
